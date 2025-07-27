@@ -2,7 +2,7 @@
   <div class="host">
     <div class="header">
       <a href="/" class="logo">Easyntrophy NFT</a>
-      <a href="https://easyntropy.tech/" class="poweredBy">
+      <a href="https://easyntropy.tech/" class="poweredBy" target="_blank">
         <span> Powered by Easyntropy, <br />The Eth rng Oracle </span>
         <img src="../../assets/images/easyntropy.png" alt="Easyntropy Logo" />
       </a>
@@ -16,6 +16,11 @@
           Easyntropy Eth RNG Oracle.
         </h1>
       </div>
+    </div>
+
+    <div class="list"></div>
+    <div class="footer">
+      Made with love by <a href="https://easyntropy.tech/" target="_blank">easyntropy.tech</a> © 2024-present
     </div>
   </div>
 </template>
@@ -76,6 +81,8 @@ h5 {
 
 .host {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-height: 100%;
   background: #97450e;
@@ -171,6 +178,21 @@ h5 {
       color: #bcdcc7;
       filter: drop-shadow(0 0 5px #bcdcc7);
     }
+  }
+}
+
+.list {
+  flex-grow: 1;
+}
+
+.footer {
+  padding: 1rem;
+  color: #d07927;
+  text-align: center;
+
+  a {
+    color: inherit;
+    font-style: italic;
   }
 }
 </style>

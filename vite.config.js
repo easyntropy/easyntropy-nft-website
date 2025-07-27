@@ -5,6 +5,12 @@ export default defineConfig({
   plugins: [vue()],
   build: {
     outDir: "../../dist",
+    target: "esnext",
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: "esnext",
+    },
   },
   server: {
     ...(process.env.CODESPACES && {

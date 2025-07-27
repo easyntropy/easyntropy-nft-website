@@ -60,7 +60,8 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { useOnboard } from "@web3-onboard/vue";
+import { ref, watch } from "vue";
 import placeholderImg from "../../assets/images/example-nft.svg";
 
 const statuses = {
@@ -70,29 +71,30 @@ const statuses = {
   minting: "minting",
   errored: "errored",
 };
+
+const { connectWallet, connectedWallet } = useOnboard();
 const connectionStatus = ref(statuses.disconnected);
 const nfts = ref([]);
 
-async function connect() {
-  if (connectionStatus.value === statuses.connected) return;
+async function onConnect() {
+  connectionStatus.value = statuses.connected;
+}
 
+async function onDisconnectConnect() {
+  connectionStatus.value = statuses.disconnected;
+  nfts.value = [];
+}
+
+async function connect() {
   try {
-    if (typeof window.ethereum !== "undefined") {
-      connectionStatus.value = statuses.connecting;
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts.length > 0) {
-        connectionStatus.value = statuses.connected;
-      }
-    } else {
-      alert("Please install MetaMask to connect and mint NFTs");
-    }
+    await connectWallet();
   } catch (error) {
     connectionStatus.value = statuses.errored;
   }
 }
 
 async function mint() {
-  await connect();
+  if (!connectedWallet) await connect();
 
   try {
     connectionStatus.value = statuses.minting;
@@ -105,6 +107,18 @@ async function mint() {
     connectionStatus.value = statuses.errored;
   }
 }
+
+watch(
+  connectedWallet,
+  (newWallet, oldWallet) => {
+    if (newWallet && !oldWallet) {
+      onConnect();
+    } else if (!newWallet && oldWallet) {
+      onDisconnectConnect();
+    }
+  },
+  { deep: true }
+);
 </script>
 
 <style lang="scss">

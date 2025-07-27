@@ -8,7 +8,14 @@
       </a>
     </div>
     <div class="kv">
-      <h1>hello world!</h1>
+      <img src="../../assets/images/elements.png" class="elements" />
+      <div class="taglineWrapper">
+        <h1 class="tagline">
+          Lets add some easy-to-use RNG to Eth contracts!<br /><br /><br />
+          Easyntropy is a collection of unique,<br />randomly generated, stored purely onchain NFTs,<br />powered by the
+          Easyntropy Eth RNG Oracle.
+        </h1>
+      </div>
     </div>
   </div>
 </template>
@@ -79,6 +86,7 @@ h5 {
   top: 0;
   right: 0;
   left: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -113,12 +121,56 @@ h5 {
 }
 
 .kv {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  gap: 40px;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: max(60vh, 400px);
+  height: max(70vh, 400px);
   background: url("../assets/images/kv.png") no-repeat 50% 100%;
   background-size: cover;
+
+  .elements {
+    width: 300px;
+  }
+
+  .taglineWrapper {
+    padding: 2rem;
+    border: 2px solid #d07927;
+    text-align: center;
+    background-color: #492915;
+  }
+
+  .tagline {
+    font-weight: bold;
+    font-size: 1.4rem;
+    text-align: center;
+    animation: color-cycle 8s infinite;
+  }
+
+  @keyframes color-cycle {
+    0%,
+    100% {
+      color: #b99461;
+      filter: drop-shadow(0 0 5px #b99461);
+    }
+
+    25% {
+      color: #ffa806;
+      filter: drop-shadow(0 0 5px #ffa806);
+    }
+
+    50% {
+      color: #4bb6c1;
+      filter: drop-shadow(0 0 5px #4bb6c1);
+    }
+
+    75% {
+      color: #bcdcc7;
+      filter: drop-shadow(0 0 5px #bcdcc7);
+    }
+  }
 }
 </style>

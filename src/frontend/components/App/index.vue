@@ -18,7 +18,27 @@
       </div>
     </div>
 
-    <div class="list"></div>
+    <div class="listSection">
+      <strong class="title">List of NFTs:</strong>
+
+      <div class="nftListWrapper">
+        <div class="example">
+          <span>Example NFT:</span>
+          <a href="../../assets/images/example-nft.svg" target="_blank">
+            <img src="../../assets/images/example-nft.svg" alt="Example NFT" />
+          </a>
+        </div>
+        <div class="nftList">
+          <button class="item mint">
+            CLICK HERE<br />
+            to MINT
+          </button>
+          <a class="item" href="../../assets/images/example-nft.svg" target="_blank">
+            <img src="../../assets/images/example-nft.svg" alt="Example NFT" />
+          </a>
+        </div>
+      </div>
+    </div>
     <div class="footer">
       Made with love by <a href="https://easyntropy.tech/" target="_blank">easyntropy.tech</a> © 2024-present
     </div>
@@ -135,12 +155,12 @@ h5 {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: max(70vh, 400px);
+  height: max(60vh, 400px);
   background: url("../assets/images/kv.png") no-repeat 50% 100%;
   background-size: cover;
 
   .elements {
-    width: 300px;
+    width: 250px;
   }
 
   .taglineWrapper {
@@ -181,8 +201,70 @@ h5 {
   }
 }
 
-.list {
+.listSection {
+  display: flex;
+  flex-direction: column;
   flex-grow: 1;
+  gap: 20px;
+  align-items: center;
+
+  .title {
+    margin: 1rem;
+    color: #492915;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-align: center;
+  }
+
+  .nftListWrapper {
+    display: flex;
+    gap: 40px;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+
+    img {
+      width: 200px;
+      object-fit: cover;
+    }
+
+    .example {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nftList {
+      display: flex;
+      flex-grow: 1;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 36px;
+      border: 3px dashed #492915;
+
+      .item {
+        display: block;
+        width: 200px;
+        padding: 0;
+        border: none;
+        background: transparent;
+      }
+
+      .item.mint {
+        border: 3px dashed #c559f3;
+        color: #c559f3;
+        font-size: 1.5rem;
+        background: #c559f31a;
+        cursor: pointer;
+
+        &:hover {
+          background: #c559f33d;
+        }
+      }
+    }
+  }
 }
 
 .footer {

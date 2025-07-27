@@ -19,7 +19,7 @@
     </div>
 
     <div class="listSection">
-      <strong class="title">List of NFTs:</strong>
+      <strong class="title">List of your NFTs:</strong>
 
       <div class="nftListWrapper">
         <div v-if="nfts.length === 0" class="example">
@@ -30,14 +30,22 @@
         </div>
 
         <div class="nftList">
-          <button v-if="connected" class="item mint" @click="mint">
-            CLICK HERE<br />
-            to MINT
+          <button v-if="connectionStatus === statuses.disconnected" class="item mint" @click="connect">
+            <small>Click here to:</small><br /><br /><b>CONNECT your wallet!</b><br /><br />
+            <small> MINT / see your NFTs</small>
           </button>
-          <button v-else class="item mint" @click="connect">
-            <b>Click here to CONNECT:</b><br /><br />
-            - MINT <br />
-            - see your NFTs
+          <button v-if="connectionStatus === statuses.connecting" class="item connecting">Connecting...</button>
+          <button v-if="connectionStatus === statuses.minting" class="item minting">Minting...</button>
+          <button v-if="connectionStatus === statuses.connected" class="item mint" @click="mint">
+            <b>!! MINT !!</b>
+          </button>
+          <button
+            v-if="connectionStatus === statuses.errored"
+            class="item error"
+            @click="connectionStatus = 'disconnected'"
+          >
+            Error...<br /><br />
+            click to restart
           </button>
 
           <a v-for="(nft, index) in nfts" :key="index" class="item" :href="nft.uri" target="_blank">
@@ -53,40 +61,49 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
 import placeholderImg from "../../assets/images/example-nft.svg";
 
-import { ref } from "vue";
-
-const connected = ref(false);
+const statuses = {
+  disconnected: "disconnected",
+  connecting: "connecting",
+  connected: "connected",
+  minting: "minting",
+  errored: "errored",
+};
+const connectionStatus = ref(statuses.disconnected);
 const nfts = ref([]);
 
 async function connect() {
+  if (connectionStatus.value === statuses.connected) return;
+
   try {
     if (typeof window.ethereum !== "undefined") {
+      connectionStatus.value = statuses.connecting;
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       if (accounts.length > 0) {
-        connected.value = true;
+        connectionStatus.value = statuses.connected;
       }
     } else {
       alert("Please install MetaMask to connect and mint NFTs");
     }
   } catch (error) {
-    console.error("Connection error:", error);
+    connectionStatus.value = statuses.errored;
   }
 }
 
 async function mint() {
-  if (!connected.value) {
-    await connect();
-    if (!connected.value) return;
-  }
+  await connect();
 
   try {
+    connectionStatus.value = statuses.minting;
     alert("NFT minted successfully!");
 
     nfts.value.push({ uri: placeholderImg });
+
+    connectionStatus.value = statuses.connected;
   } catch (error) {
-    console.error("Minting error:", error);
+    connectionStatus.value = statuses.errored;
   }
 }
 </script>
@@ -306,6 +323,39 @@ h5 {
 
         &:hover {
           background: #c559f33d;
+        }
+      }
+
+      .item.error {
+        border: 3px dashed #f35959;
+        color: #f33;
+        font-size: 1.2rem;
+        background: #ff00001a;
+        cursor: pointer;
+
+        &:hover {
+          background: #ff00003d;
+        }
+      }
+
+      .item.connecting,
+      .item.minting {
+        border: 3px dashed #c559f3;
+        color: #c559f3;
+        font-size: 1.2rem;
+        background: #c559f31a;
+        box-shadow: 0 0 10px #c559f3;
+        cursor: wait;
+        animation: glow 1.5s infinite alternate;
+      }
+
+      @keyframes glow {
+        from {
+          box-shadow: 0 0 5px #c559f3, 0 0 10px #c559f3;
+        }
+
+        to {
+          box-shadow: 0 0 10px #c559f3, 0 0 20px #c559f3, 0 0 30px #c559f3;
         }
       }
     }

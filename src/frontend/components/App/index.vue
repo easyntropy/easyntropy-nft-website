@@ -22,19 +22,26 @@
       <strong class="title">List of NFTs:</strong>
 
       <div class="nftListWrapper">
-        <div class="example">
+        <div v-if="nfts.length === 0" class="example">
           <span>Example NFT:</span>
           <a href="../../assets/images/example-nft.svg" target="_blank">
             <img src="../../assets/images/example-nft.svg" alt="Example NFT" />
           </a>
         </div>
+
         <div class="nftList">
-          <button class="item mint">
+          <button v-if="connected" class="item mint" @click="mint">
             CLICK HERE<br />
             to MINT
           </button>
-          <a class="item" href="../../assets/images/example-nft.svg" target="_blank">
-            <img src="../../assets/images/example-nft.svg" alt="Example NFT" />
+          <button v-else class="item mint" @click="connect">
+            <b>Click here to CONNECT:</b><br /><br />
+            - MINT <br />
+            - see your NFTs
+          </button>
+
+          <a v-for="(nft, index) in nfts" :key="index" class="item" :href="nft.uri" target="_blank">
+            <img :src="nft.uri" />
           </a>
         </div>
       </div>
@@ -45,7 +52,44 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import placeholderImg from "../../assets/images/example-nft.svg";
+
+import { ref } from "vue";
+
+const connected = ref(false);
+const nfts = ref([]);
+
+async function connect() {
+  try {
+    if (typeof window.ethereum !== "undefined") {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (accounts.length > 0) {
+        connected.value = true;
+      }
+    } else {
+      alert("Please install MetaMask to connect and mint NFTs");
+    }
+  } catch (error) {
+    console.error("Connection error:", error);
+  }
+}
+
+async function mint() {
+  if (!connected.value) {
+    await connect();
+    if (!connected.value) return;
+  }
+
+  try {
+    alert("NFT minted successfully!");
+
+    nfts.value.push({ uri: placeholderImg });
+  } catch (error) {
+    console.error("Minting error:", error);
+  }
+}
+</script>
 
 <style lang="scss">
 @import "./css/fonts";
@@ -247,6 +291,7 @@ h5 {
       .item {
         display: block;
         width: 200px;
+        height: 200px;
         padding: 0;
         border: none;
         background: transparent;
@@ -255,7 +300,7 @@ h5 {
       .item.mint {
         border: 3px dashed #c559f3;
         color: #c559f3;
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         background: #c559f31a;
         cursor: pointer;
 

@@ -11,9 +11,8 @@
       <img src="../../assets/images/elements.png" class="elements" />
       <div class="taglineWrapper">
         <h1 class="tagline">
-          Lets add some easy-to-use RNG to Eth contracts!<br /><br /><br />
-          Easyntropy is a collection of unique,<br />randomly generated, stored purely onchain NFTs,<br />powered by the
-          Easyntropy Eth RNG Oracle.
+          Easyntrophy is a collection of unique,<br />randomly generated, stored purely onchain NFTs!<br /><br />
+          <small>powered by the <i>Easyntropy</i> Eth rng Oracle.</small>
         </h1>
       </div>
     </div>

@@ -34,20 +34,30 @@
             <small> MINT / see your NFTs</small>
           </button>
           <button v-if="connectionStatus === statuses.connecting" class="item connecting">Connecting...</button>
-          <button v-if="connectionStatus === statuses.minting" class="item minting">Minting...</button>
+          <button v-if="connectionStatus === statuses.minting" class="item minting glowing">Minting...</button>
+          <button v-if="connectionStatus === statuses.waitngForRng" class="item minting glowing">
+            MINTED!<br /><br />now waiting<br />for RNG...
+          </button>
           <button v-if="connectionStatus === statuses.connected" class="item mint" @click="mint">
-            <b>!! MINT !!</b>
+            <small>click here to</small><br /><br /><b>MINT</b>
           </button>
           <button
             v-if="connectionStatus === statuses.errored"
             class="item error"
-            @click="connectionStatus = 'disconnected'"
+            @click="connectionStatus = statuses.connected"
           >
             Error...<br /><br />
             click to restart
           </button>
 
-          <a v-for="(nft, index) in nfts" :key="index" class="item" :href="nft.uri" target="_blank">
+          <a
+            v-for="(nft, index) in [...nfts].reverse()"
+            :key="index"
+            class="item"
+            :class="{ glowing: justMinted && index === 0 }"
+            :href="nft.uri"
+            target="_blank"
+          >
             <img :src="nft.uri" />
           </a>
         </div>
@@ -61,23 +71,29 @@
 
 <script setup>
 import { useOnboard } from "@web3-onboard/vue";
-import { ref, watch } from "vue";
-import placeholderImg from "../../assets/images/example-nft.svg";
+import { ref, watch, onMounted } from "vue";
+import { ethers } from "ethers";
 
 const statuses = {
   disconnected: "disconnected",
   connecting: "connecting",
   connected: "connected",
   minting: "minting",
+  waitngForRng: "waitngForRng",
   errored: "errored",
 };
 
 const { connectWallet, connectedWallet } = useOnboard();
 const connectionStatus = ref(statuses.disconnected);
 const nfts = ref([]);
+const justMinted = ref(false);
 
+//
+// --- walet hooks
 async function onConnect() {
+  if (connectionStatus.value === statuses.connected) return;
   connectionStatus.value = statuses.connected;
+  await fetchList();
 }
 
 async function onDisconnectConnect() {
@@ -85,6 +101,8 @@ async function onDisconnectConnect() {
   nfts.value = [];
 }
 
+//
+// --- wallet actions
 async function connect() {
   try {
     await connectWallet();
@@ -93,20 +111,60 @@ async function connect() {
   }
 }
 
+//
+// --- nft actions
+async function fetchList() {
+  const contract = await getContract();
+  const ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+
+  const list = [];
+  for (const tokenId of ownedTokenIds) {
+    const encodedBased64TokenUri = await contract.tokenURI(tokenId);
+    const tokenUri = atob(encodedBased64TokenUri.slice(29));
+    const tokenData = JSON.parse(tokenUri);
+    const uri = tokenData.image;
+    list.push({ uri, id: tokenId });
+  }
+  nfts.value = list;
+}
+
 async function mint() {
   if (!connectedWallet) await connect();
 
   try {
     connectionStatus.value = statuses.minting;
-    alert("NFT minted successfully!");
+    const contract = await getContract();
+    const fee = await contract.easyntropyFee();
+    const tx = await contract.mint({ value: fee });
+    await tx.wait();
 
-    nfts.value.push({ uri: placeholderImg });
+    connectionStatus.value = statuses.waitngForRng;
 
+    const latestTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+    const latestMintedTokenIds = latestTokenIds[latestTokenIds.length - 1];
+
+    let seedObtained = false;
+    while (!seedObtained) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      seedObtained = (await contract.seeds(latestMintedTokenIds)) !== 0n;
+    }
+
+    await fetchList();
+    justMinted.value = true;
     connectionStatus.value = statuses.connected;
   } catch (error) {
     connectionStatus.value = statuses.errored;
   }
 }
+
+// --- lifecycle
+onMounted(() => {
+  if (connectedWallet.value) {
+    onConnect();
+  } else {
+    onDisconnectConnect();
+  }
+});
 
 watch(
   connectedWallet,
@@ -119,6 +177,24 @@ watch(
   },
   { deep: true }
 );
+
+// --- support
+async function getContract() {
+  const contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+  const contractABI = [
+    "function mint() public",
+    "function easyntropyFee() public view returns (uint256 fee)",
+    "function tokenURI(uint256 tokenId) public view returns (string memory result)",
+    "function ownedTokens(address tokensOwner) external view returns (uint256[] memory result)",
+    "function seeds(uint256 tokenId) public view returns (uint256)",
+  ];
+
+  while (!connectedWallet.value) await new Promise((resolve) => setTimeout(resolve, 100));
+  const provider = new ethers.BrowserProvider(connectedWallet.value.provider);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, contractABI, signer);
+  return contract;
+}
 </script>
 
 <style lang="scss">
@@ -283,7 +359,7 @@ h5 {
   align-items: center;
 
   .title {
-    margin: 1rem;
+    margin: 1.5rem 0 0;
     color: #492915;
     font-weight: bold;
     font-size: 1.2rem;
@@ -359,6 +435,9 @@ h5 {
         background: #c559f31a;
         box-shadow: 0 0 10px #c559f3;
         cursor: wait;
+      }
+
+      .item.glowing {
         animation: glow 1.5s infinite alternate;
       }
 

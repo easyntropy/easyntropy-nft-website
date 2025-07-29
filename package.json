@@ -6,8 +6,8 @@
     "node": "20"
   },
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --config vite.config.js ./src/frontend/",
-    "build": "rm -rf ./dist/* ; vite build --config vite.config.js ./src/frontend/"
+    "dev": "VITE_NFT_CONTRACT_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 vite --host 0.0.0.0 --config vite.config.js ./src/frontend/",
+    "build": "rm -rf ./dist/* ; VITE_NFT_CONTRACT_ADDRESS=0xplaceholder vite build --config vite.config.js ./src/frontend/"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^2.3.3",

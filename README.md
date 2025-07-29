@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./.readmeAssets/demo.jpg" alt="demo" />
+</p>
+
 # easyntropy-nft-website
 
 ## Development

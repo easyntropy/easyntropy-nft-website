@@ -7,6 +7,16 @@ const MAINNET_RPC_URL = "wss://eth.drpc.org";
 init({
   wallets: [injectedModule()],
   chains: [
+    ...(import.meta.env.DEV
+      ? [
+          {
+            id: 31337,
+            token: "ETH",
+            label: "DEV Chain",
+            rpcUrl: "http://localhost:8545",
+          },
+        ]
+      : []),
     {
       id: "0x1",
       token: "ETH",

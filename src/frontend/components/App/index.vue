@@ -19,6 +19,12 @@
 
     <div class="listSection">
       <strong class="title">List of your NFTs:</strong>
+      <small class="loading">
+        &nbsp;
+        <template v-if="fetchingStatus === fetchingStatuses.fetching">Loading...</template>
+        <template v-if="fetchingStatus === fetchingStatuses.errored">Errored...</template>
+        &nbsp;
+      </small>
 
       <div class="nftListWrapper">
         <div v-if="nfts.length === 0" class="example">
@@ -84,8 +90,15 @@ const statuses = {
   errored: "errored",
 };
 
+const fetchingStatuses = {
+  idle: "idle",
+  fetching: "fetching",
+  errored: "errored",
+};
+
 const { connectWallet, connectedWallet } = useOnboard();
 const connectionStatus = ref(statuses.disconnected);
+const fetchingStatus = ref(fetchingStatuses.idle);
 const nfts = ref([]);
 const justMinted = ref(false);
 
@@ -116,11 +129,18 @@ async function connect() {
 // --- nft actions
 async function fetchList() {
   if (!connectedWallet) await connect();
+  const list = [];
+  let ownedTokenIds = [];
 
   const contract = await getContract(connectedWallet.value);
-  const ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+  try {
+    fetchingStatus.value = fetchingStatuses.fetching;
+    ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+  } catch (error) {
+    fetchingStatus.value = fetchingStatuses.errored;
+    throw error;
+  }
 
-  const list = [];
   for (const tokenId of ownedTokenIds) {
     try {
       const encodedBased64TokenUri = await contract.tokenURI(tokenId);
@@ -132,6 +152,8 @@ async function fetchList() {
       list.push({ id: tokenId, uri: null, ready: false });
     }
   }
+
+  fetchingStatus.value = fetchingStatuses.idle;
   nfts.value = list;
 }
 

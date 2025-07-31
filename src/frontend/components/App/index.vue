@@ -334,7 +334,7 @@ h5 {
   justify-content: center;
   width: 100%;
   height: max(60vh, 400px);
-  background: url("../../assets/images/kv.png") no-repeat 50% 100%;
+  background: #93461a url("../../assets/images/kv.png") no-repeat 50% 100%;
   background-size: cover;
 
   .elements {

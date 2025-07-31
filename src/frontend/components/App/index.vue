@@ -114,7 +114,9 @@ async function connect() {
 //
 // --- nft actions
 async function fetchList() {
-  const contract = await getContract();
+  if (!connectedWallet) await connect();
+
+  const contract = await getContract(connectedWallet.value);
   const ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
 
   const list = [];
@@ -133,7 +135,7 @@ async function mint() {
 
   try {
     connectionStatus.value = statuses.minting;
-    const contract = await getContract();
+    const contract = await getContract(connectedWallet.value);
     const fee = await contract.easyntropyFee();
     const tx = await contract.mint({ value: fee });
     await tx.wait();
@@ -146,6 +148,9 @@ async function mint() {
     let seedObtained = false;
     while (!seedObtained) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // eslint-disable-next-line no-console
+      console.log("Waiting for RNG...");
       seedObtained = (await contract.seeds(latestMintedTokenIds)) !== 0n;
     }
 
@@ -154,6 +159,7 @@ async function mint() {
     connectionStatus.value = statuses.connected;
   } catch (error) {
     connectionStatus.value = statuses.errored;
+    throw error;
   }
 }
 

@@ -180,9 +180,18 @@ watch(
 </script>
 
 <style lang="scss">
-@import "./css/fonts";
-@import "./css/variables.scss";
+@import "./css/variables";
 @import "./css/normalize";
+
+@font-face {
+  font-weight: normal;
+  font-family: Minecraft-Regular;
+  font-style: normal;
+  src: url("@/frontend/assets/fonts/Minecraft-Regular.ttf.woff") format("woff"),
+    url("@/frontend/assets/fonts/Minecraft-Regular.ttf.svg") format("svg"),
+    url("@/frontend/assets/fonts/Minecraft-Regular.ttf.eot") format("embedded-opentype");
+  font-display: swap;
+}
 
 html {
   font-size: 16px;
@@ -288,7 +297,7 @@ h5 {
   justify-content: center;
   width: 100%;
   height: max(60vh, 400px);
-  background: url("../assets/images/kv.png") no-repeat 50% 100%;
+  background: url("../../assets/images/kv.png") no-repeat 50% 100%;
   background-size: cover;
 
   .elements {

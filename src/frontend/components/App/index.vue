@@ -35,22 +35,26 @@
         </div>
 
         <div class="nftList">
-          <button v-if="connectionStatus === statuses.disconnected" class="item mint" @click="connect">
+          <button v-if="connectionStatus === connectionStatuses.disconnected" class="item mint" @click="connect">
             <small>Click here to:</small><br /><br /><b>CONNECT your wallet!</b><br /><br />
             <small> MINT / see your NFTs</small>
           </button>
-          <button v-if="connectionStatus === statuses.connecting" class="item connecting">Connecting...</button>
-          <button v-if="connectionStatus === statuses.minting" class="item minting glowing">Minting...</button>
-          <button v-if="connectionStatus === statuses.waitngForRng" class="item minting glowing">
+          <button v-if="connectionStatus === connectionStatuses.connecting" class="item connecting">
+            Connecting...
+          </button>
+          <button v-if="connectionStatus === connectionStatuses.minting" class="item minting glowing">
+            Minting...
+          </button>
+          <button v-if="connectionStatus === connectionStatuses.waitngForRng" class="item minting glowing">
             MINTED!<br /><br />now waiting<br />for RNG...
           </button>
-          <button v-if="connectionStatus === statuses.connected" class="item mint" @click="mint">
+          <button v-if="connectionStatus === connectionStatuses.connected" class="item mint" @click="mint">
             <small>click here to</small><br /><br /><b>MINT</b>
           </button>
           <button
-            v-if="connectionStatus === statuses.errored"
+            v-if="connectionStatus === connectionStatuses.errored"
             class="item error"
-            @click="connectionStatus = statuses.connected"
+            @click="connectionStatus = connectionStatuses.connected"
           >
             Error...<br /><br />
             click to restart
@@ -81,7 +85,7 @@ import { useOnboard } from "@web3-onboard/vue";
 import { ref, watch, onMounted } from "vue";
 import { getContract } from "../../lib/contract";
 
-const statuses = {
+const connectionStatuses = {
   disconnected: "disconnected",
   connecting: "connecting",
   connected: "connected",
@@ -97,7 +101,7 @@ const fetchingStatuses = {
 };
 
 const { connectWallet, connectedWallet } = useOnboard();
-const connectionStatus = ref(statuses.disconnected);
+const connectionStatus = ref(connectionStatuses.disconnected);
 const fetchingStatus = ref(fetchingStatuses.idle);
 const nfts = ref([]);
 const justMinted = ref(false);
@@ -105,13 +109,13 @@ const justMinted = ref(false);
 //
 // --- walet hooks
 async function onConnect() {
-  if (connectionStatus.value === statuses.connected) return;
-  connectionStatus.value = statuses.connected;
+  if (connectionStatus.value === connectionStatuses.connected) return;
+  connectionStatus.value = connectionStatuses.connected;
   await fetchList();
 }
 
 async function onDisconnectConnect() {
-  connectionStatus.value = statuses.disconnected;
+  connectionStatus.value = connectionStatuses.disconnected;
   nfts.value = [];
 }
 
@@ -121,7 +125,7 @@ async function connect() {
   try {
     await connectWallet();
   } catch (error) {
-    connectionStatus.value = statuses.errored;
+    connectionStatus.value = connectionStatuses.errored;
   }
 }
 
@@ -161,13 +165,13 @@ async function mint() {
   if (!connectedWallet) await connect();
 
   try {
-    connectionStatus.value = statuses.minting;
+    connectionStatus.value = connectionStatuses.minting;
     const contract = await getContract(connectedWallet.value);
     const fee = await contract.easyntropyFee();
     const tx = await contract.mint({ value: fee });
     await tx.wait();
 
-    connectionStatus.value = statuses.waitngForRng;
+    connectionStatus.value = connectionStatuses.waitngForRng;
 
     const latestTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
     const latestMintedTokenIds = latestTokenIds[latestTokenIds.length - 1];
@@ -183,9 +187,9 @@ async function mint() {
 
     await fetchList();
     justMinted.value = true;
-    connectionStatus.value = statuses.connected;
+    connectionStatus.value = connectionStatuses.connected;
   } catch (error) {
-    connectionStatus.value = statuses.errored;
+    connectionStatus.value = connectionStatuses.errored;
     throw error;
   }
 }

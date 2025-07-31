@@ -1,7 +1,21 @@
 import { ethers } from "ethers";
 
-export async function getContract(connectedWallet) {
-  const contractAddress = import.meta.env.VITE_NFT_CONTRACT_ADDRESS;
+export async function getContract(wallet) {
+  let contractAddress;
+  if (wallet.chains[0].id === "0x7a69") {
+    //
+    // dev chain
+    contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+  } else if (wallet.chains[0].id === "0xaa36a7") {
+    //
+    // sepolia testnet
+    contractAddress = "0x0c2693afb0bfbfc162d968B1C046681F606fA6D9";
+  } else {
+    //
+    // mainnet
+    contractAddress = "0xplaceholder";
+  }
+
   const contractABI = [
     "function mint() public",
     "function easyntropyFee() public view returns (uint256 fee)",
@@ -10,8 +24,7 @@ export async function getContract(connectedWallet) {
     "function seeds(uint256 tokenId) public view returns (uint256)",
   ];
 
-  while (!connectedWallet.value) await new Promise((resolve) => setTimeout(resolve, 100));
-  const provider = new ethers.BrowserProvider(connectedWallet.value.provider);
+  const provider = new ethers.BrowserProvider(wallet.provider);
   const signer = await provider.getSigner();
   const contract = new ethers.Contract(contractAddress, contractABI, signer);
   return contract;

@@ -19,6 +19,12 @@
 
     <div class="listSection">
       <strong class="title">List of your NFTs:</strong>
+      <small class="loading">
+        &nbsp;
+        <template v-if="fetchingStatus === fetchingStatuses.fetching">Loading...</template>
+        <template v-if="fetchingStatus === fetchingStatuses.errored">Errored...</template>
+        &nbsp;
+      </small>
 
       <div class="nftListWrapper">
         <div v-if="nfts.length === 0" class="example">
@@ -29,22 +35,26 @@
         </div>
 
         <div class="nftList">
-          <button v-if="connectionStatus === statuses.disconnected" class="item mint" @click="connect">
+          <button v-if="connectionStatus === connectionStatuses.disconnected" class="item mint" @click="connect">
             <small>Click here to:</small><br /><br /><b>CONNECT your wallet!</b><br /><br />
             <small> MINT / see your NFTs</small>
           </button>
-          <button v-if="connectionStatus === statuses.connecting" class="item connecting">Connecting...</button>
-          <button v-if="connectionStatus === statuses.minting" class="item minting glowing">Minting...</button>
-          <button v-if="connectionStatus === statuses.waitngForRng" class="item minting glowing">
+          <button v-if="connectionStatus === connectionStatuses.connecting" class="item connecting">
+            Connecting...
+          </button>
+          <button v-if="connectionStatus === connectionStatuses.minting" class="item minting glowing">
+            Minting...
+          </button>
+          <button v-if="connectionStatus === connectionStatuses.waitngForRng" class="item minting glowing">
             MINTED!<br /><br />now waiting<br />for RNG...
           </button>
-          <button v-if="connectionStatus === statuses.connected" class="item mint" @click="mint">
+          <button v-if="connectionStatus === connectionStatuses.connected" class="item mint" @click="mint">
             <small>click here to</small><br /><br /><b>MINT</b>
           </button>
           <button
-            v-if="connectionStatus === statuses.errored"
+            v-if="connectionStatus === connectionStatuses.errored"
             class="item error"
-            @click="connectionStatus = statuses.connected"
+            @click="connectionStatus = connectionStatuses.connected"
           >
             Error...<br /><br />
             click to restart
@@ -55,10 +65,11 @@
             :key="index"
             class="item"
             :class="{ glowing: justMinted && index === 0 }"
-            :href="nft.uri"
+            :href="nft.ready ? nft.uri : ''"
             target="_blank"
           >
-            <img :src="nft.uri" />
+            <img v-if="nft.ready" :src="nft.uri" />
+            <img v-else src="../../assets/images/crafting-nft.svg" />
           </a>
         </div>
       </div>
@@ -74,7 +85,7 @@ import { useOnboard } from "@web3-onboard/vue";
 import { ref, watch, onMounted } from "vue";
 import { getContract } from "../../lib/contract";
 
-const statuses = {
+const connectionStatuses = {
   disconnected: "disconnected",
   connecting: "connecting",
   connected: "connected",
@@ -83,21 +94,28 @@ const statuses = {
   errored: "errored",
 };
 
+const fetchingStatuses = {
+  idle: "idle",
+  fetching: "fetching",
+  errored: "errored",
+};
+
 const { connectWallet, connectedWallet } = useOnboard();
-const connectionStatus = ref(statuses.disconnected);
+const connectionStatus = ref(connectionStatuses.disconnected);
+const fetchingStatus = ref(fetchingStatuses.idle);
 const nfts = ref([]);
 const justMinted = ref(false);
 
 //
 // --- walet hooks
 async function onConnect() {
-  if (connectionStatus.value === statuses.connected) return;
-  connectionStatus.value = statuses.connected;
+  if (connectionStatus.value === connectionStatuses.connected) return;
+  connectionStatus.value = connectionStatuses.connected;
   await fetchList();
 }
 
 async function onDisconnectConnect() {
-  connectionStatus.value = statuses.disconnected;
+  connectionStatus.value = connectionStatuses.disconnected;
   nfts.value = [];
 }
 
@@ -107,24 +125,39 @@ async function connect() {
   try {
     await connectWallet();
   } catch (error) {
-    connectionStatus.value = statuses.errored;
+    connectionStatus.value = connectionStatuses.errored;
   }
 }
 
 //
 // --- nft actions
 async function fetchList() {
-  const contract = await getContract();
-  const ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
-
+  if (!connectedWallet) await connect();
   const list = [];
-  for (const tokenId of ownedTokenIds) {
-    const encodedBased64TokenUri = await contract.tokenURI(tokenId);
-    const tokenUri = atob(encodedBased64TokenUri.slice(29));
-    const tokenData = JSON.parse(tokenUri);
-    const uri = tokenData.image;
-    list.push({ uri, id: tokenId });
+  let ownedTokenIds = [];
+
+  const contract = await getContract(connectedWallet.value);
+  try {
+    fetchingStatus.value = fetchingStatuses.fetching;
+    ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+  } catch (error) {
+    fetchingStatus.value = fetchingStatuses.errored;
+    throw error;
   }
+
+  for (const tokenId of ownedTokenIds) {
+    try {
+      const encodedBased64TokenUri = await contract.tokenURI(tokenId);
+      const tokenUri = atob(encodedBased64TokenUri.slice(29));
+      const tokenData = JSON.parse(tokenUri);
+      const uri = tokenData.image;
+      list.push({ id: tokenId, uri, ready: true });
+    } catch (error) {
+      list.push({ id: tokenId, uri: null, ready: false });
+    }
+  }
+
+  fetchingStatus.value = fetchingStatuses.idle;
   nfts.value = list;
 }
 
@@ -132,13 +165,13 @@ async function mint() {
   if (!connectedWallet) await connect();
 
   try {
-    connectionStatus.value = statuses.minting;
-    const contract = await getContract();
+    connectionStatus.value = connectionStatuses.minting;
+    const contract = await getContract(connectedWallet.value);
     const fee = await contract.easyntropyFee();
     const tx = await contract.mint({ value: fee });
     await tx.wait();
 
-    connectionStatus.value = statuses.waitngForRng;
+    connectionStatus.value = connectionStatuses.waitngForRng;
 
     const latestTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
     const latestMintedTokenIds = latestTokenIds[latestTokenIds.length - 1];
@@ -146,14 +179,18 @@ async function mint() {
     let seedObtained = false;
     while (!seedObtained) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // eslint-disable-next-line no-console
+      console.log("Waiting for RNG...");
       seedObtained = (await contract.seeds(latestMintedTokenIds)) !== 0n;
     }
 
     await fetchList();
     justMinted.value = true;
-    connectionStatus.value = statuses.connected;
+    connectionStatus.value = connectionStatuses.connected;
   } catch (error) {
-    connectionStatus.value = statuses.errored;
+    connectionStatus.value = connectionStatuses.errored;
+    throw error;
   }
 }
 
@@ -297,7 +334,7 @@ h5 {
   justify-content: center;
   width: 100%;
   height: max(60vh, 400px);
-  background: url("../../assets/images/kv.png") no-repeat 50% 100%;
+  background: #93461a url("../../assets/images/kv.png") no-repeat 50% 100%;
   background-size: cover;
 
   .elements {

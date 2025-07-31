@@ -55,10 +55,11 @@
             :key="index"
             class="item"
             :class="{ glowing: justMinted && index === 0 }"
-            :href="nft.uri"
+            :href="nft.ready ? nft.uri : ''"
             target="_blank"
           >
-            <img :src="nft.uri" />
+            <img v-if="nft.ready" :src="nft.uri" />
+            <img v-else src="../../assets/images/crafting-nft.svg" />
           </a>
         </div>
       </div>
@@ -121,11 +122,15 @@ async function fetchList() {
 
   const list = [];
   for (const tokenId of ownedTokenIds) {
-    const encodedBased64TokenUri = await contract.tokenURI(tokenId);
-    const tokenUri = atob(encodedBased64TokenUri.slice(29));
-    const tokenData = JSON.parse(tokenUri);
-    const uri = tokenData.image;
-    list.push({ uri, id: tokenId });
+    try {
+      const encodedBased64TokenUri = await contract.tokenURI(tokenId);
+      const tokenUri = atob(encodedBased64TokenUri.slice(29));
+      const tokenData = JSON.parse(tokenUri);
+      const uri = tokenData.image;
+      list.push({ id: tokenId, uri, ready: true });
+    } catch (error) {
+      list.push({ id: tokenId, uri: null, ready: false });
+    }
   }
   nfts.value = list;
 }

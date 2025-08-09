@@ -60,17 +60,16 @@
             click to restart
           </button>
 
-          <a
+          <button
             v-for="(nft, index) in [...nfts].reverse()"
             :key="index"
             class="item"
             :class="{ glowing: justMinted && index === 0 || !nft.ready }"
-            :href="nft.ready ? nft.uri : ''"
-            target="_blank"
+            @click="nft.ready && openNft(nft.uri)"
           >
             <img v-if="nft.ready" :src="nft.uri" />
             <img v-else src="../../assets/images/crafting-nft.svg" />
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -131,6 +130,17 @@ async function connect() {
 
 //
 // --- nft actions
+function openNft(uri) {
+  const byteString = atob(uri.split(',')[1]);
+  const byteArray = new Uint8Array(byteString.length);
+  for (let i = 0; i < byteString.length; i++) {
+    byteArray[i] = byteString.charCodeAt(i);
+  }
+  const blob = new Blob([byteArray], { type: 'image/svg+xml' });
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, '_blank');
+}
+
 async function fetchList() {
   if (!connectedWallet) await connect();
   const list = [];
@@ -429,6 +439,7 @@ h5 {
         padding: 0;
         border: none;
         background: transparent;
+        cursor: pointer;
       }
 
       .item.mint {
@@ -436,7 +447,6 @@ h5 {
         color: #c559f3;
         font-size: 1.2rem;
         background: #c559f31a;
-        cursor: pointer;
 
         &:hover {
           background: #c559f33d;
@@ -448,7 +458,6 @@ h5 {
         color: #f33;
         font-size: 1.2rem;
         background: #ff00001a;
-        cursor: pointer;
 
         &:hover {
           background: #ff00003d;

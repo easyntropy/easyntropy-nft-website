@@ -9,7 +9,7 @@ export async function getContract(wallet) {
   } else if (wallet.chains[0].id === "0xaa36a7") {
     //
     // sepolia testnet
-    contractAddress = "0x0c2693afb0bfbfc162d968B1C046681F606fA6D9";
+    contractAddress = "0xA7ac0896Ebbe0E70Ad6Ce97f3AB083E76a960617";
   } else {
     //
     // mainnet

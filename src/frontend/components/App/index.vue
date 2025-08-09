@@ -64,7 +64,7 @@
             v-for="(nft, index) in [...nfts].reverse()"
             :key="index"
             class="item"
-            :class="{ glowing: justMinted && index === 0 }"
+            :class="{ glowing: justMinted && index === 0 || !nft.ready }"
             :href="nft.ready ? nft.uri : ''"
             target="_blank"
           >

@@ -15,6 +15,12 @@
           <small>powered by the <i>Easyntropy</i> Eth rng Oracle.</small>
         </h1>
       </div>
+
+      <div class="networkBanner" v-if="connectionStatus !== connectionStatuses.disconnected">
+        <span v-if="connectedToSepolia">You are connected to the <i>Sepolia test network</i>.</span>
+        <span v-else>You are connected to the <i>Ethereum Mainnet</i>.</span>
+        <br /><br /><small>You can change the network using the widget in the corner.</small>
+      </div>
     </div>
 
     <div class="listSection">
@@ -81,7 +87,7 @@
 
 <script setup>
 import { useOnboard } from "@web3-onboard/vue";
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, computed } from "vue";
 import { getContract } from "../../lib/contract";
 
 const connectionStatuses = {
@@ -105,8 +111,12 @@ const fetchingStatus = ref(fetchingStatuses.idle);
 const nfts = ref([]);
 const justMinted = ref(false);
 
+const connectedToSepolia = computed(() => {
+  return connectedWallet.value?.chains?.[0]?.id === "0xaa36a7"; // Sepolia chain ID
+});
+
 //
-// --- walet hooks
+// --- wallet hooks
 async function onConnect() {
   if (connectionStatus.value === connectionStatuses.connected) return;
   connectionStatus.value = connectionStatuses.connected;
@@ -344,6 +354,7 @@ h5 {
   justify-content: center;
   width: 100%;
   height: max(60vh, 400px);
+  border-bottom: 1px solid #CB7A34;
   background: #93461a url("../../assets/images/kv.png") no-repeat 50% 100%;
   background-size: cover;
 
@@ -386,6 +397,18 @@ h5 {
       color: #bcdcc7;
       filter: drop-shadow(0 0 5px #bcdcc7);
     }
+  }
+
+  .networkBanner {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    padding: 10px;
+    border: 1px solid #CB7A34;
+    border-bottom: none;
+    color: #CB7A34;
+    font-weight: bold;
+    background-color: #93461A;
   }
 }
 

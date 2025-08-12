@@ -15,12 +15,12 @@ init({
           },
         ]
       : []),
-    // {
-    //   id: "0x1",
-    //   token: "ETH",
-    //   label: "Ethereum Mainnet",
-    //   rpcUrl: "wss://eth.drpc.org",
-    // },
+    {
+      id: "0x1",
+      token: "ETH",
+      label: "Ethereum Mainnet",
+      rpcUrl: "wss://eth.drpc.org",
+    },
     {
       id: "0xaa36a7",
       token: "ETH",

@@ -408,7 +408,7 @@ h5 {
     border-bottom: none;
     color: #CB7A34;
     font-weight: bold;
-    background-color: #93461A;
+    background-color: #97450e;
   }
 }
 

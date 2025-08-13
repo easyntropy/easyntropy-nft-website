@@ -13,7 +13,7 @@ export async function getContract(wallet) {
   } else {
     //
     // mainnet
-    contractAddress = "0xplaceholder";
+    contractAddress = "0xBc3489B963CC5E44f90E6f559144B0AAEe1B31C6";
   }
 
   const contractABI = [

@@ -55,7 +55,7 @@
             MINTED!<br /><br />now waiting<br />for RNG...
           </button>
           <button v-if="connectionStatus === connectionStatuses.connected" class="item mint" @click="mint">
-            <small>click here to</small><br /><br /><b>MINT</b>
+            <small>click here to</small><br /><br /><b>MINT</b><br /> {{ displayPrice }}
           </button>
           <button
             v-if="connectionStatus === connectionStatuses.errored"
@@ -110,9 +110,20 @@ const connectionStatus = ref(connectionStatuses.disconnected);
 const fetchingStatus = ref(fetchingStatuses.idle);
 const nfts = ref([]);
 const justMinted = ref(false);
+const price = ref(-1);
 
 const connectedToSepolia = computed(() => {
   return connectedWallet.value?.chains?.[0]?.id === "0xaa36a7"; // Sepolia chain ID
+});
+
+const displayPrice = computed(() => {
+  if (price.value <= 0) return "";
+  const eth = Number(price.value) / 1e18;
+  if (eth < 0.0001) {
+    const gwei = Number(price.value) / 1e9;
+    return `${gwei} Gwei`;
+  }
+  return `${eth} ETH`;
 });
 
 //
@@ -120,7 +131,8 @@ const connectedToSepolia = computed(() => {
 async function onConnect() {
   if (connectionStatus.value === connectionStatuses.connected) return;
   connectionStatus.value = connectionStatuses.connected;
-  await fetchList();
+  fetchList();
+  fetchPrice();
 }
 
 async function onDisconnectConnect() {
@@ -149,6 +161,13 @@ function openNft(uri) {
   const blob = new Blob([byteArray], { type: 'image/svg+xml' });
   const blobUrl = URL.createObjectURL(blob);
   window.open(blobUrl, '_blank');
+}
+
+async function fetchPrice() {
+  if (!connectedWallet) await connect();
+  const contract = await getContract(connectedWallet.value);
+  price.value = await contract.easyntropyFee();
+  return price.value;
 }
 
 async function fetchList() {
@@ -187,7 +206,7 @@ async function mint() {
   try {
     connectionStatus.value = connectionStatuses.minting;
     const contract = await getContract(connectedWallet.value);
-    const fee = await contract.easyntropyFee();
+    const fee = await fetchPrice();
     const tx = await contract.mint({ value: fee });
     await tx.wait();
 
@@ -233,6 +252,15 @@ watch(
     }
   },
   { deep: true }
+);
+
+watch(
+  connectedToSepolia,
+  () => {
+    if(!connectedWallet.value) return;
+    fetchList();
+    fetchPrice();
+  },
 );
 </script>
 

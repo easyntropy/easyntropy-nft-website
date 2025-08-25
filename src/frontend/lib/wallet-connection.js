@@ -19,13 +19,13 @@ init({
       id: "0x1",
       token: "ETH",
       label: "Ethereum Mainnet",
-      rpcUrl: "wss://eth.drpc.org",
+      rpcUrl: "https://eth.drpc.org",
     },
     {
       id: "0xaa36a7",
       token: "ETH",
       label: "Sepolia Testnet",
-      rpcUrl: "wss://sepolia.drpc.org",
+      rpcUrl: "https://sepolia.drpc.org",
     },
   ],
   appMetadata: {

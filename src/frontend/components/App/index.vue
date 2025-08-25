@@ -72,6 +72,7 @@
             class="item"
             :class="{ glowing: justMinted && index === 0 || !nft.ready }"
             @click="nft.ready && openNft(nft.uri)"
+            :title="nft.ready ? `#${nft.id}` : ''"
           >
             <img v-if="nft.ready" :src="nft.uri" />
             <img v-else src="../../assets/images/crafting-nft.svg" />

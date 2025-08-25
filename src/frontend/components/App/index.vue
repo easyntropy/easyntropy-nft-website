@@ -33,7 +33,7 @@
       </small>
 
       <div class="nftListWrapper">
-        <div v-if="nfts.length === 0" class="example">
+        <div v-if="ownedTokenIds.length === 0" class="example">
           <span>Example NFT:</span>
           <a href="../../assets/images/example-nft.svg" target="_blank">
             <img src="../../assets/images/example-nft.svg" alt="Example NFT" />
@@ -67,14 +67,16 @@
           </button>
 
           <button
-            v-for="(nft, index) in [...nfts].reverse()"
-            :key="index"
+            v-for="(tokenId) in [...ownedTokenIds].reverse()"
+            :key="tokenId"
             class="item"
-            :class="{ glowing: justMinted && index === 0 || !nft.ready }"
-            @click="nft.ready && openNft(nft.uri)"
+            :class="{ glowing: justMintedId === tokenId }"
+            @click="tokenUrls[tokenId] && openNft(tokenUrls[tokenId])"
+            :title="`#${tokenId}`"
           >
-            <img v-if="nft.ready" :src="nft.uri" />
-            <img v-else src="../../assets/images/crafting-nft.svg" />
+            <img v-if="!tokenUrls[tokenId] && justMintedId === tokenId" src="../../assets/images/crafting-nft.svg" />
+            <img v-else-if="!tokenUrls[tokenId] && justMintedId !== tokenId" src="../../assets/images/loading-nft.svg" />
+            <img v-else :src="tokenUrls[tokenId]" />
           </button>
         </div>
       </div>
@@ -88,7 +90,7 @@
 <script setup>
 import { useOnboard } from "@web3-onboard/vue";
 import { ref, watch, onMounted, computed } from "vue";
-import { getContract } from "../../lib/contract";
+import { getReadContract, getWriteContract } from "../../lib/contract";
 
 const connectionStatuses = {
   disconnected: "disconnected",
@@ -108,8 +110,9 @@ const fetchingStatuses = {
 const { connectWallet, connectedWallet } = useOnboard();
 const connectionStatus = ref(connectionStatuses.disconnected);
 const fetchingStatus = ref(fetchingStatuses.idle);
-const nfts = ref([]);
-const justMinted = ref(false);
+const ownedTokenIds = ref([]);
+const tokenUrls = ref({});
+const justMintedId = ref(0);
 const price = ref(-1);
 
 const connectedToSepolia = computed(() => {
@@ -137,7 +140,7 @@ async function onConnect() {
 
 async function onDisconnectConnect() {
   connectionStatus.value = connectionStatuses.disconnected;
-  nfts.value = [];
+  ownedTokenIds.value = [];
 }
 
 //
@@ -165,39 +168,35 @@ function openNft(uri) {
 
 async function fetchPrice() {
   if (!connectedWallet) await connect();
-  const contract = await getContract(connectedWallet.value);
+  const contract = await getReadContract(connectedWallet.value);
   price.value = await contract.easyntropyFee();
   return price.value;
 }
 
 async function fetchList() {
   if (!connectedWallet) await connect();
-  const list = [];
-  let ownedTokenIds = [];
 
-  const contract = await getContract(connectedWallet.value);
+  const contract = await getReadContract(connectedWallet.value);
   try {
     fetchingStatus.value = fetchingStatuses.fetching;
-    ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+    ownedTokenIds.value = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+    fetchingStatus.value = fetchingStatuses.idle;
   } catch (error) {
     fetchingStatus.value = fetchingStatuses.errored;
     throw error;
   }
 
-  for (const tokenId of ownedTokenIds) {
+  const shuffledTokenIds = [...ownedTokenIds.value].sort(() => Math.random() - 0.5);
+  for (const tokenId of shuffledTokenIds) {
+    if (tokenUrls.value[tokenId]) continue;
     try {
       const encodedBased64TokenUri = await contract.tokenURI(tokenId);
       const tokenUri = atob(encodedBased64TokenUri.slice(29));
       const tokenData = JSON.parse(tokenUri);
       const uri = tokenData.image;
-      list.push({ id: tokenId, uri, ready: true });
-    } catch (error) {
-      list.push({ id: tokenId, uri: null, ready: false });
-    }
+      tokenUrls.value[tokenId] = uri;
+    } catch (error) {}
   }
-
-  fetchingStatus.value = fetchingStatuses.idle;
-  nfts.value = list;
 }
 
 async function mint() {
@@ -205,27 +204,29 @@ async function mint() {
 
   try {
     connectionStatus.value = connectionStatuses.minting;
-    const contract = await getContract(connectedWallet.value);
+    const writeContract = await getWriteContract(connectedWallet.value);
+    const readContract = await getReadContract(connectedWallet.value);
     const fee = await fetchPrice();
-    const tx = await contract.mint({ value: fee });
+    const tx = await writeContract.mint({ value: fee });
     await tx.wait();
 
     connectionStatus.value = connectionStatuses.waitngForRng;
 
-    const latestTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+    const latestTokenIds = await writeContract.ownedTokens(connectedWallet.value.accounts[0].address);
     const latestMintedTokenIds = latestTokenIds[latestTokenIds.length - 1];
+    justMintedId.value = latestMintedTokenIds;
 
+    await fetchList();
     let seedObtained = false;
     while (!seedObtained) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // eslint-disable-next-line no-console
       console.log("Waiting for RNG...");
-      seedObtained = (await contract.seeds(latestMintedTokenIds)) !== 0n;
+      seedObtained = (await readContract.seeds(latestMintedTokenIds)) !== 0n;
     }
 
     await fetchList();
-    justMinted.value = true;
     connectionStatus.value = connectionStatuses.connected;
   } catch (error) {
     connectionStatus.value = connectionStatuses.errored;

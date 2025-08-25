@@ -89,7 +89,7 @@
 <script setup>
 import { useOnboard } from "@web3-onboard/vue";
 import { ref, watch, onMounted, computed } from "vue";
-import { getContract } from "../../lib/contract";
+import { getReadContract, getWriteContract } from "../../lib/contract";
 
 const connectionStatuses = {
   disconnected: "disconnected",
@@ -166,7 +166,7 @@ function openNft(uri) {
 
 async function fetchPrice() {
   if (!connectedWallet) await connect();
-  const contract = await getContract(connectedWallet.value);
+  const contract = await getReadContract(connectedWallet.value);
   price.value = await contract.easyntropyFee();
   return price.value;
 }
@@ -176,7 +176,7 @@ async function fetchList() {
   const list = [];
   let ownedTokenIds = [];
 
-  const contract = await getContract(connectedWallet.value);
+  const contract = await getReadContract(connectedWallet.value);
   try {
     fetchingStatus.value = fetchingStatuses.fetching;
     ownedTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
@@ -206,23 +206,24 @@ async function mint() {
 
   try {
     connectionStatus.value = connectionStatuses.minting;
-    const contract = await getContract(connectedWallet.value);
+    const writeContract = await getWriteContract(connectedWallet.value);
+    const readContract = await getReadContract(connectedWallet.value);
     const fee = await fetchPrice();
-    const tx = await contract.mint({ value: fee });
+    const tx = await writeContract.mint({ value: fee });
     await tx.wait();
 
     connectionStatus.value = connectionStatuses.waitngForRng;
 
-    const latestTokenIds = await contract.ownedTokens(connectedWallet.value.accounts[0].address);
+    const latestTokenIds = await writeContract.ownedTokens(connectedWallet.value.accounts[0].address);
     const latestMintedTokenIds = latestTokenIds[latestTokenIds.length - 1];
 
     let seedObtained = false;
     while (!seedObtained) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // eslint-disable-next-line no-console
       console.log("Waiting for RNG...");
-      seedObtained = (await contract.seeds(latestMintedTokenIds)) !== 0n;
+      seedObtained = (await readContract.seeds(latestMintedTokenIds)) !== 0n;
     }
 
     await fetchList();

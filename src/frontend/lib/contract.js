@@ -2,17 +2,17 @@ import { ethers } from "ethers";
 
 export async function getContract(wallet) {
   let contractAddress;
+  //
+  // dev chain
   if (wallet.chains[0].id === "0x7a69") {
-    //
-    // dev chain
     contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-  } else if (wallet.chains[0].id === "0xaa36a7") {
     //
     // sepolia testnet
+  } else if (wallet.chains[0].id === "0xaa36a7") {
     contractAddress = "0xA7ac0896Ebbe0E70Ad6Ce97f3AB083E76a960617";
-  } else {
     //
     // mainnet
+  } else {
     contractAddress = "0xBc3489B963CC5E44f90E6f559144B0AAEe1B31C6";
   }
 

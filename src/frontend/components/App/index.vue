@@ -35,8 +35,8 @@
       <div class="nftListWrapper">
         <div v-if="ownedTokenIds.length === 0" class="example">
           <span>Example NFT:</span>
-          <a href="../../assets/images/example-nft.svg" target="_blank">
-            <img src="../../assets/images/example-nft.svg" alt="Example NFT" />
+          <a :href="exampleNftSvgUrl" target="_blank">
+            <img :src="exampleNftSvgUrl" alt="Example NFT" />
           </a>
         </div>
 
@@ -91,6 +91,7 @@
 import { useOnboard } from "@web3-onboard/vue";
 import { ref, watch, onMounted, computed } from "vue";
 import { getReadContract, getWriteContract } from "../../lib/contract";
+import exampleNftSvgUrl from "@/frontend/assets/images/example-nft.svg";
 
 const connectionStatuses = {
   disconnected: "disconnected",

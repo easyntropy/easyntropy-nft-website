@@ -383,7 +383,7 @@ h5 {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: max(60vh, 400px);
+  height: max(60vh, 600px);
   border-bottom: 1px solid #CB7A34;
   background: #93461a url("../../assets/images/kv.png") no-repeat 50% 100%;
   background-size: cover;
@@ -435,6 +435,7 @@ h5 {
     bottom: -1px;
     padding: 10px;
     border: 1px solid #CB7A34;
+    border-right: none;
     border-bottom: none;
     color: #CB7A34;
     font-weight: bold;
@@ -462,8 +463,9 @@ h5 {
     gap: 40px;
     justify-content: space-between;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1240px;
     height: 100%;
+    padding: 0 20px;
 
     img {
       width: 200px;

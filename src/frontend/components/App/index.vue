@@ -23,15 +23,20 @@
       </div>
     </div>
 
-    <div class="listSection">
-      <strong class="title">List of your NFTs:</strong>
+    <div class="section">
+      <div class="nav">
+        <a :class="['title', { active: mode === modes.my }]" @click="mode = modes.my">List of your NFTs</a>
+        <a :class="['title', { active: mode === modes.all }]" @click="mode = modes.all">List of ALL NFTs</a>
+      </div>
       <small class="loading">
         &nbsp;
         <template v-if="fetchingStatus === fetchingStatuses.fetching">Loading...</template>
         <template v-if="fetchingStatus === fetchingStatuses.errored">Errored...</template>
         &nbsp;
       </small>
+    </div>
 
+    <div v-if="mode === modes.my" class="section">
       <div class="nftListWrapper">
         <div v-if="ownedTokenIds.length === 0" class="example">
           <span>Example NFT:</span>
@@ -81,6 +86,24 @@
         </div>
       </div>
     </div>
+
+    <div v-if="mode === modes.all" class="section">
+      <div class="nftListWrapper">
+        <div class="nftList">
+          <button
+            v-for="(tokenId) in [...allTokenIds].reverse()"
+            :key="tokenId"
+            class="item"
+            @click="tokenUrls[tokenId] && openNft(tokenUrls[tokenId])"
+            :title="`#${tokenId}`"
+          >
+            <img v-if="!tokenUrls[tokenId] && justMintedId === tokenId" src="../../assets/images/crafting-nft.svg" />
+            <img v-else-if="!tokenUrls[tokenId] && justMintedId !== tokenId" src="../../assets/images/loading-nft.svg" />
+            <img v-else :src="tokenUrls[tokenId]" />
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="footer">
       mainnet contract: <a href="https://etherscan.io/address/0xBc3489B963CC5E44f90E6f559144B0AAEe1B31C6" target="_blank">0xBc3489B963CC5E44f90E6f559144B0AAEe1B31C6</a><br />
       sepolia contract: <a href="https://sepolia.etherscan.io/address/0xA7ac0896Ebbe0E70Ad6Ce97f3AB083E76a960617" target="_blank">0xA7ac0896Ebbe0E70Ad6Ce97f3AB083E76a960617</a><br />
@@ -93,8 +116,13 @@
 <script setup>
 import { useOnboard } from "@web3-onboard/vue";
 import { ref, watch, onMounted, computed } from "vue";
-import { getReadContract, getWriteContract } from "../../lib/contract";
+import { getReadContract, getReadContractBasedOnChain, getWriteContract } from "../../lib/contract";
 import exampleNftSvgUrl from "@/frontend/assets/images/example-nft.svg";
+
+const modes = {
+  my: "my",
+  all: "all"
+};
 
 const connectionStatuses = {
   disconnected: "disconnected",
@@ -112,9 +140,11 @@ const fetchingStatuses = {
 };
 
 const { connectWallet, connectedWallet } = useOnboard();
+const mode = ref(modes.my);
 const connectionStatus = ref(connectionStatuses.disconnected);
 const fetchingStatus = ref(fetchingStatuses.idle);
 const ownedTokenIds = ref([]);
+const allTokenIds = ref([]);
 const tokenUrls = ref({});
 const justMintedId = ref(0);
 const price = ref(-1);
@@ -138,11 +168,11 @@ const displayPrice = computed(() => {
 async function onConnect() {
   if (connectionStatus.value === connectionStatuses.connected) return;
   connectionStatus.value = connectionStatuses.connected;
-  fetchList();
+  fetchOwnedTokenList();
   fetchPrice();
 }
 
-async function onDisconnectConnect() {
+async function onDisconnect() {
   connectionStatus.value = connectionStatuses.disconnected;
   ownedTokenIds.value = [];
 }
@@ -171,15 +201,17 @@ function openNft(uri) {
 }
 
 async function fetchPrice() {
-  if (!connectedWallet) await connect();
+  if (!connectedWallet.value) await connect();
   const contract = await getReadContract(connectedWallet.value);
   price.value = await contract.easyntropyFee();
   return price.value;
 }
 
 async function fetchList() {
-  if (!connectedWallet) await connect();
+  (mode.value === modes.all) ? fetchAllTokenList() : fetchOwnedTokenList();
+}
 
+async function fetchOwnedTokenList() {
   const contract = await getReadContract(connectedWallet.value);
   try {
     fetchingStatus.value = fetchingStatuses.fetching;
@@ -203,8 +235,33 @@ async function fetchList() {
   }
 }
 
+async function fetchAllTokenList() {
+  const contract = connectedWallet.value ? await getReadContract(connectedWallet.value) : await getReadContractBasedOnChain();
+
+  try {
+    fetchingStatus.value = fetchingStatuses.fetching;
+    allTokenIds.value = Array.from({ length: Number(await contract.lastTokenId()) }, (_, i) => i + 1);
+    fetchingStatus.value = fetchingStatuses.idle;
+  } catch (error) {
+    fetchingStatus.value = fetchingStatuses.errored;
+    throw error;
+  }
+
+  const shuffledTokenIds = [...allTokenIds.value].sort(() => Math.random() - 0.5);
+  for (const tokenId of shuffledTokenIds) {
+    if (tokenUrls.value[tokenId]) continue;
+    try {
+      const encodedBased64TokenUri = await contract.tokenURI(tokenId);
+      const tokenUri = atob(encodedBased64TokenUri.slice(29));
+      const tokenData = JSON.parse(tokenUri);
+      const uri = tokenData.image;
+      tokenUrls.value[tokenId] = uri;
+    } catch (error) {}
+  }
+}
+
 async function mint() {
-  if (!connectedWallet) await connect();
+  if (!connectedWallet.value) await connect();
 
   try {
     connectionStatus.value = connectionStatuses.minting;
@@ -220,7 +277,7 @@ async function mint() {
     const latestMintedTokenIds = latestTokenIds[latestTokenIds.length - 1];
     justMintedId.value = latestMintedTokenIds;
 
-    await fetchList();
+    await fetchOwnedTokenList();
     let seedObtained = false;
     while (!seedObtained) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -230,7 +287,7 @@ async function mint() {
       seedObtained = (await readContract.seeds(latestMintedTokenIds)) !== 0n;
     }
 
-    await fetchList();
+    await fetchOwnedTokenList();
     connectionStatus.value = connectionStatuses.connected;
   } catch (error) {
     connectionStatus.value = connectionStatuses.errored;
@@ -243,7 +300,7 @@ onMounted(() => {
   if (connectedWallet.value) {
     onConnect();
   } else {
-    onDisconnectConnect();
+    onDisconnect();
   }
 });
 
@@ -253,7 +310,7 @@ watch(
     if (newWallet && !oldWallet) {
       onConnect();
     } else if (!newWallet && oldWallet) {
-      onDisconnectConnect();
+      onDisconnect();
     }
   },
   { deep: true }
@@ -265,6 +322,13 @@ watch(
     if(!connectedWallet.value) return;
     fetchList();
     fetchPrice();
+  },
+);
+
+watch(
+  mode,
+  () => {
+    fetchList();
   },
 );
 </script>
@@ -446,15 +510,31 @@ h5 {
   }
 }
 
-.listSection {
+.nav {
+  display: flex;
+  gap: 9rem;
+  margin: 1.5rem 0 0;
+
+  .title {
+    cursor: pointer;
+
+    &.active {
+      text-decoration: underline;
+      text-decoration-thickness: 3px;
+      text-underline-offset: 6px;
+    }
+  }
+}
+
+.section {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  gap: 20px;
+  gap: 10px;
   align-items: center;
+  margin-bottom: 10px;
 
   .title {
-    margin: 1.5rem 0 0;
     color: #492915;
     font-weight: bold;
     font-size: 1.2rem;

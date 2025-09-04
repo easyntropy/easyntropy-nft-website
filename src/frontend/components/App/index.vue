@@ -142,7 +142,7 @@ async function onConnect() {
   fetchPrice();
 }
 
-async function onDisconnectConnect() {
+async function onDisconnect() {
   connectionStatus.value = connectionStatuses.disconnected;
   ownedTokenIds.value = [];
 }
@@ -243,7 +243,7 @@ onMounted(() => {
   if (connectedWallet.value) {
     onConnect();
   } else {
-    onDisconnectConnect();
+    onDisconnect();
   }
 });
 
@@ -253,7 +253,7 @@ watch(
     if (newWallet && !oldWallet) {
       onConnect();
     } else if (!newWallet && oldWallet) {
-      onDisconnectConnect();
+      onDisconnect();
     }
   },
   { deep: true }

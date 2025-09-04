@@ -320,6 +320,7 @@ watch(
   connectedToSepolia,
   () => {
     if(!connectedWallet.value) return;
+    tokenUrls.value = {};
     fetchList();
     fetchPrice();
   },

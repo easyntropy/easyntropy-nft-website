@@ -13,6 +13,7 @@ const contractABI = [
   "function tokenURI(uint256 tokenId) public view returns (string memory result)",
   "function ownedTokens(address tokensOwner) external view returns (uint256[] memory result)",
   "function seeds(uint256 tokenId) public view returns (uint256)",
+  "function lastTokenId() public view returns (uint256)",
 ];
 
 export async function getReadContract(wallet) {

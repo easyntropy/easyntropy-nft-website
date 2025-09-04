@@ -18,6 +18,10 @@ const contractABI = [
 
 export async function getReadContract(wallet) {
   const chainId = wallet.chains[0].id;
+  return getReadContractBasedOnChain(chainId);
+}
+
+export async function getReadContractBasedOnChain(chainId = "0x1") {
   const contractAddress = contractAddresses[chainId];
   const rpcUrl = chains.find((chain) => chain.id === chainId)?.rpcUrl;
 

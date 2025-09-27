@@ -105,7 +105,7 @@
       </div>
     </div>
     <div class="footer">
-      mainnet contract: <a href="https://etherscan.io/address/0xBc3489B963CC5E44f90E6f559144B0AAEe1B31C6" target="_blank">0xBc3489B963CC5E44f90E6f559144B0AAEe1B31C6</a><br />
+      mainnet contract: <a href="https://etherscan.io/address/0x03628a9C9454878511F542F6F52e57fdE331265f" target="_blank">0x03628a9C9454878511F542F6F52e57fdE331265f</a><br />
       sepolia contract: <a href="https://sepolia.etherscan.io/address/0xdA1253E36cde9CCe502bB18E3F63C9435B305A5b" target="_blank">0xdA1253E36cde9CCe502bB18E3F63C9435B305A5b</a><br />
       <br />
       Made with love by <a href="https://easyntropy.tech/" target="_blank">easyntropy.tech</a> © 2024-present

@@ -4,7 +4,7 @@ import chains from "./chains";
 const contractAddresses = {
   "0x7a69": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", // dev chain
   "0xaa36a7": "0xdA1253E36cde9CCe502bB18E3F63C9435B305A5b", // sepolia testnet
-  "0x1": "0xBc3489B963CC5E44f90E6f559144B0AAEe1B31C6", // mainnet
+  "0x1": "0x03628a9C9454878511F542F6F52e57fdE331265f", // mainnet
 };
 
 const contractABI = [

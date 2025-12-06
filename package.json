@@ -10,6 +10,8 @@
     "build": "rm -rf ./dist/* ; vite build --config vite.config.js ./src/frontend/"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "^4.6.1",
+    "@sentry/vue": "^10.29.0",
     "@vitejs/plugin-vue": "^2.3.3",
     "@web3-onboard/injected-wallets": "^2.11.3",
     "@web3-onboard/vue": "^2.10.0",
